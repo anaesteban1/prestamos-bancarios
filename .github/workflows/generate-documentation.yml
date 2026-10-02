@@ -1,0 +1,117 @@
+name: Generate Documentation
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "database/**"
+      - ".github/workflows/generate-documentation.yml"
+
+jobs:
+  documentation:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create documentation directory
+        run: mkdir -p documentation
+
+      - name: Generate data dictionary
+        run: |
+          cat > documentation/diccionario-datos.md <<'EOF'
+          # Diccionario de Datos
+
+          ## Tabla Users
+
+          | Campo | Tipo | Restriccion | Descripcion |
+          |---|---|---|---|
+          | Id | INT | PK, IDENTITY | Identificador del usuario |
+          | FirstName | VARCHAR(100) | NOT NULL | Nombre del usuario |
+          | LastName | VARCHAR(100) | NOT NULL | Apellido del usuario |
+          | Email | VARCHAR(150) | UNIQUE, NOT NULL | Correo electronico |
+          | PasswordHash | VARCHAR(255) | NOT NULL | Hash de contrasena |
+          | Phone | VARCHAR(20) | NULL | Telefono |
+          | Role | VARCHAR(20) | NOT NULL | Rol CLIENT o ADMIN |
+          | CreatedAt | DATETIME2 | NOT NULL | Fecha de creacion |
+
+          ## Tabla Loans
+
+          | Campo | Tipo | Restriccion | Descripcion |
+          |---|---|---|---|
+          | Id | INT | PK, IDENTITY | Identificador del prestamo |
+          | UserId | INT | FK, NOT NULL | Usuario propietario |
+          | Amount | DECIMAL(18,2) | NOT NULL | Monto solicitado |
+          | InterestRate | DECIMAL(5,2) | NOT NULL | Tasa de interes |
+          | TermMonths | INT | NOT NULL | Plazo en meses |
+          | MonthlyPayment | DECIMAL(18,2) | NULL | Cuota mensual |
+          | Status | VARCHAR(20) | NOT NULL | Estado del prestamo |
+          | ApplicationDate | DATETIME2 | NOT NULL | Fecha de solicitud |
+          | ApprovalDate | DATETIME2 | NULL | Fecha de aprobacion |
+          | CreatedAt | DATETIME2 | NOT NULL | Fecha de creacion |
+
+          ## Tabla Payments
+
+          | Campo | Tipo | Restriccion | Descripcion |
+          |---|---|---|---|
+          | Id | INT | PK, IDENTITY | Identificador del pago |
+          | LoanId | INT | FK, NOT NULL | Prestamo asociado |
+          | Amount | DECIMAL(18,2) | NOT NULL | Monto pagado |
+          | PaymentDate | DATETIME2 | NOT NULL | Fecha del pago |
+          | PaymentMethod | VARCHAR(50) | NULL | Metodo de pago |
+          | CreatedAt | DATETIME2 | NOT NULL | Fecha de creacion |
+          EOF
+
+      - name: Generate ER diagram
+        run: |
+          cat > documentation/er-diagram.md <<'EOF'
+          # Diagrama Entidad Relacion
+
+          ```mermaid
+          erDiagram
+              USERS ||--o{ LOANS : solicita
+              LOANS ||--o{ PAYMENTS : recibe
+
+              USERS {
+                  int Id PK
+                  varchar FirstName
+                  varchar LastName
+                  varchar Email
+                  varchar PasswordHash
+                  varchar Phone
+                  varchar Role
+                  datetime CreatedAt
+              }
+
+              LOANS {
+                  int Id PK
+                  int UserId FK
+                  decimal Amount
+                  decimal InterestRate
+                  int TermMonths
+                  decimal MonthlyPayment
+                  varchar Status
+                  datetime ApplicationDate
+                  datetime ApprovalDate
+                  datetime CreatedAt
+              }
+
+              PAYMENTS {
+                  int Id PK
+                  int LoanId FK
+                  decimal Amount
+                  datetime PaymentDate
+                  varchar PaymentMethod
+                  datetime CreatedAt
+              }
+          ```
+          EOF
+
+      - name: Upload documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-documentation
+          path: documentation/
