@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="PrestamosBancarios.API/PrestamosBancarios.API.csproj" />
+  <Project Path="PrestamosBancarios.Tests/PrestamosBancarios.Tests.csproj" />
+</Solution>
