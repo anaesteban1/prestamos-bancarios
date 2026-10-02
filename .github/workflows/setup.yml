@@ -1,0 +1,37 @@
+name: Setup Database
+
+on:
+  workflow_dispatch:
+
+jobs:
+  setup-database:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install sqlcmd
+        run: |
+          curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
+          curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list | sudo tee /etc/apt/sources.list.d/msprod.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+
+      - name: Execute bd.sql
+        run: |
+          /opt/mssql-tools18/bin/sqlcmd \
+          -S "${{ secrets.DB_SERVER }}" \
+          -U "${{ secrets.DB_USER }}" \
+          -P "${{ secrets.DB_PASSWORD }}" \
+          -C \
+          -i database/bd.sql
+
+      - name: Execute feed.sql
+        run: |
+          /opt/mssql-tools18/bin/sqlcmd \
+          -S "${{ secrets.DB_SERVER }}" \
+          -U "${{ secrets.DB_USER }}" \
+          -P "${{ secrets.DB_PASSWORD }}" \
+          -C \
+          -i database/feed.sql
